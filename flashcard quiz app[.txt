@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recall - Flashcard App</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #e9e7ff, #dff7ff);
+      color: #252449;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 650px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 15px 45px rgba(63, 60, 120, 0.15);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    header h1 {
+      color: #6558d3;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #77758f;
+    }
+
+    .decks {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .deck-btn {
+      border: 1px solid #dedafa;
+      background: white;
+      color: #6558d3;
+      padding: 10px 16px;
+      border-radius: 20px;
+    }
+
+    .deck-btn.active,
+    .primary {
+      background: #6558d3;
+      color: white;
+      border-color: #6558d3;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 14px;
+      color: #77758f;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: #e9e7f8;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 25px;
+    }
+
+    .progress {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #8275ed, #5bc7e8);
+      transition: width 0.3s;
+    }
+
+    .card {
+      min-height: 300px;
+      perspective: 1000px;
+      margin-bottom: 25px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      min-height: 300px;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      min-height: 300px;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      box-shadow: 0 8px 25px rgba(70, 65, 130, 0.12);
+    }
+
+    .front {
+      background: linear-gradient(145deg, #ffffff, #f1efff);
+      border: 1px solid #e4e0ff;
+    }
+
+    .back {
+      background: linear-gradient(145deg, #6558d3, #8877ed);
+      color: white;
+      transform: rotateY(180deg);
+    }
+
+    .face small {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+
+    .face h2 {
+      font-size: 25px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .hint {
+      margin-top: 20px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .navigation button,
+    .rating button,
+    .shuffle-btn {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid #dedafa;
+      background: white;
+      color: #6558d3;
+      font-weight: bold;
+    }
+
+    .navigation .primary {
+      background: #6558d3;
+      color: white;
+    }
+
+    .rating {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .rating button {
+      flex: 1;
+      min-width: 110px;
+    }
+
+    .rating .learn {
+      background: #fff2dc;
+      border-color: #ffe0a8;
+      color: #945b0b;
+    }
+
+    .rating .known {
+      background: #ddf8ed;
+      border-color: #b9efd9;
+      color: #18734d;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      color: #9290a7;
+      font-size: 12px;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding: 20px;
+      }
+
+      header h1 {
+        font-size: 27px;
+      }
+
+      .face h2 {
+        font-size: 21px;
+      }
+
+      .navigation button {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>✦ Recall</h1>
+      <p>Learn something new, one card at a time.</p>
+    </header>
+
+    <nav class="decks" aria-label="Flashcard subjects">
+      <button class="deck-btn active" data-deck="science">
+        Science
+      </button>
+      <button class="deck-btn" data-deck="geography">
+        Geography
+      </button>
+      <button class="deck-btn" data-deck="web">
+        Web Development
+      </button>
+    </nav>
+
+    <section class="progress-info">
+      <span id="counter">Card 1 of 5</span>
+      <span id="score">Mastered: 0</span>
+    </section>
+
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <section
+      class="card"
+      id="card"
+      tabindex="0"
+      role="button"
+      aria-label="Flashcard. Click to reveal the answer."
+      aria-pressed="false"
+    >
+      <div class="card-inner">
+        <div class="face front">
+          <small>Question</small>
+          <h2 id="question">What is photosynthesis?</h2>
+          <p class="hint">Click the card to reveal the answer</p>
+        </div>
+
+        <div class="face back">
+          <small>Answer</small>
+          <h2 id="answer">The process plants use to make food from sunlight.</h2>
+          <p class="hint">Click again to return to the question</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="navigation">
+      <button id="prev">← Previous</button>
+      <button id="shuffle">⤨ Shuffle</button>
+      <button class="primary" id="next">Next →</button>
+    </div>
+
+    <div class="rating">
+      <button class="learn" id="learning">Still Learning</button>
+      <button class="known" id="mastered">✓ I Know This</button>
+    </div>
+
+    <p class="footer">
+      Recall Flashcards · Practice at your own pace
+    </p>
+  </main>
+
+  <script>
+    const decks = {
+      science: [
+        {
+          q: "What is photosynthesis?",
+          a: "The process plants use to make food from sunlight."
+        },
+        {
+          q: "What planet is known as the Red Planet?",
+          a: "Mars, because iron minerals on its surface give it a reddish color."
+        },
+        {
+          q: "What is the chemical formula for water?",
+          a: "H₂O: two hydrogen atoms and one oxygen atom."
+        },
+        {
+          q: "What is the center of an atom called?",
+          a: "The nucleus."
+        },
+        {
+          q: "What force pulls objects toward Earth?",
+          a: "Gravity."
+        }
+      ],
+
+      geography: [
+        {
+          q: "What is the largest ocean on Earth?",
+          a: "The Pacific Ocean."
+        },
+        {
+          q: "What is the capital of Japan?",
+          a: "Tokyo."
+        },
+        {
+          q: "On which continent is the Philippines?",
+          a: "Asia."
+        },
+        {
+          q: "What is the largest continent?",
+          a: "Asia."
+        },
+        {
+          q: "What do we call a large area of salt water?",
+          a: "An ocean."
+        }
+      ],
+
+      web: [
+        {
+          q: "What does HTML stand for?",
+          a: "HyperText Markup Language."
+        },
+        {
+          q: "What is CSS used for?",
+          a: "CSS styles web pages, including colors, layouts, and fonts."
+        },
+        {
+          q: "What does JavaScript do?",
+          a: "It adds interactive behavior and functionality to web pages."
+        },
+        {
+          q: "Which HTML tag creates a paragraph?",
+          a: "The <p> tag."
+        },
+        {
+          q: "Which HTML tag creates a hyperlink?",
+          a: "The <a> tag."
+        }
+      ]
+    };
+
+    let currentDeck = "science";
+    let cards = [...decks[currentDeck]];
+    let index = 0;
+
+    const ratings = {};
+
+    const cardElement = document.getElementById("card");
+    const questionElement = document.getElementById("question");
+    const answerElement = document.getElementById("answer");
+    const counterElement = document.getElementById("counter");
+    const scoreElement = document.getElementById("score");
+    const progressElement = document.getElementById("progress");
+
+    function cardKey() {
+      return currentDeck + ":" + index;
+    }
+
+    function renderCard() {
+      const current = cards[index];
+
+      questionElement.textContent = current.q;
+      answerElement.textContent = current.a;
+
+      cardElement.classList.remove("flipped");
+      cardElement.setAttribute("aria-pressed", "false");
+
+      counterElement.textContent =
+        `Card ${index + 1} of ${cards.length}`;
+
+      const masteredCount = cards.filter(
+        (_, i) => ratings[currentDeck + ":" + i] === "known"
+      ).length;
+
+      scoreElement.textContent =
+        `Mastered: ${masteredCount}`;
+
+      progressElement.style.width =
+        `${((index + 1) / cards.length) * 100}%`;
+    }
+
+    function flipCard() {
+      cardElement.classList.toggle("flipped");
+
+      cardElement.setAttribute(
+        "aria-pressed",
+        cardElement.classList.contains("flipped") ? "true" : "false"
+      );
+    }
+
+    function nextCard() {
+      index = (index + 1) % cards.length;
+      renderCard();
+    }
+
+    function previousCard() {
+      index = (index - 1 + cards.length) % cards.length;
+      renderCard();
+    }
+
+    function shuffleCards() {
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+
+      index = 0;
+      renderCard();
+    }
+
+    function selectDeck(deckName) {
+      currentDeck = deckName;
+      cards = [...decks[deckName]];
+      index = 0;
+
+      document.querySelectorAll(".deck-btn").forEach(button => {
+        button.classList.toggle(
+          "active",
+          button.dataset.deck === deckName
+        );
+      });
+
+      renderCard();
+    }
+
+    function rateCard(rating) {
+      ratings[cardKey()] = rating;
+      renderCard();
+      nextCard();
+    }
+
+    cardElement.addEventListener("click", flipCard);
+
+    cardElement.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        flipCard();
+      }
+    });
+
+    document.getElementById("next")
+      .addEventListener("click", nextCard);
+
+    document.getElementById("prev")
+      .addEventListener("click", previousCard);
+
+    document.getElementById("shuffle")
+      .addEventListener("click", shuffleCards);
+
+    document.getElementById("learning")
+      .addEventListener("click", () => rateCard("learning"));
+
+    document.getElementById("mastered")
+      .addEventListener("click", () => rateCard("known"));
+
+    document.querySelectorAll(".deck-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        selectDeck(button.dataset.deck);
+      });
+    });
+
+    renderCard();
+  </script>
+</body>
+</html>
